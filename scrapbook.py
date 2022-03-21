@@ -34,7 +34,7 @@ class App(tk.Tk):
     def make_one_image_button(self, i):
         btn = tk.Button(self.frame, text='%d'% (i+1),
                         bg='gray10', fg='white',
-                        command=lambda s=self, i=i: s.display_image(i))
+                        command=lambda : self.display_image(i))
         btn.place(relx=self.xpos, rely=0.99, anchor=tk.S)
         self.xpos += 0.08
 
@@ -53,6 +53,7 @@ class App(tk.Tk):
         self.image.thumbnail((400, 400))
         self.tk_image = ImageTk.PhotoImage(self.image)
         self.image_label.config(image=self.tk_image)
+        self.show_image_info()
 
     def show_image_info(self):
         if hasattr(self, 'info_frame'):
