@@ -13,12 +13,13 @@ class App(tk.Tk):
         self.frame = tk.Frame(self)
         self.frame.pack(fill=tk.BOTH, expand=1)
 
-        self.canvas = tk.Canvas(self.frame)
+        self.canvas = tk.Canvas(self.frame, bg='white', bd=2)
         self.points = [150, 100, 200, 120, 240, 180, 210,
             200, 150, 150, 100, 200]
 
         self.poly_item = self.canvas.create_polygon(self.points,
-                outline='#f11', fill='#1f1', width=2)
+                                outline='#f11', fill='#1f1', width=2,
+                                tags='draggable')
         self.canvas.pack(fill=tk.BOTH, expand=1)
         self.zoom = tk.Scale(self.frame, from_=1, to=4, 
                              orient=tk.HORIZONTAL,
@@ -35,6 +36,8 @@ class App(tk.Tk):
         self.pressed_keys = {}
         self.bind("<KeyPress>", self.key_press)
         self.bind("<KeyRelease>", self.key_release)
+        self.canvas.tag_bind("draggable", '<ButtonPress-1>', self.button_press)
+        self.canvas.tag_bind("draggable", '<Button1-Motion>', self.button_motion)
 
     def key_press(self, event):
         self.pressed_keys[event.keysym] = True
@@ -71,6 +74,16 @@ class App(tk.Tk):
     def calc_up_move(self):
         if 'Up' in self.pressed_keys:
             self.off_y -= self.speed
+
+    def button_press(self, event):
+        item = self.canvas.find_withtag(tk.CURRENT)
+        self.dnd_item = (item, event.x, event.y)
+
+    def button_motion(self, event):
+        x, y = event.x, event.y
+        item, x0, y0 = self.dnd_item
+        self.canvas.move(item, x-x0, y-y0)
+        self.dnd_item = (item, x, y)
 
 
 if __name__ == '__main__':
