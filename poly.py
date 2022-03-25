@@ -1,3 +1,4 @@
+from PIL import Image, ImageTk
 import tkinter as tk
 
 
@@ -12,6 +13,7 @@ class App(tk.Tk):
     def make_widgets(self):
         self.make_canvas_frame()
         self.make_canvas()
+        self.load_image()
         self.create_polygon()
         self.create_rect()
         self.make_scale()
@@ -52,6 +54,11 @@ class App(tk.Tk):
                              orient=tk.HORIZONTAL,
                              command=self.change_zoom)
         self.zoom.pack(fill=tk.X)
+
+    def load_image(self):
+        img = Image.open('images/boat.jpg')
+        self.img = ImageTk.PhotoImage(img)
+        self.canvas.create_image(100, 100, anchor=tk.NW, image=self.img, tags='draggable')
 
     def mouse_motion(self, event):
         x, y = event.x, event.y
