@@ -10,21 +10,55 @@ class App(tk.Tk):
         self.process_movements()
 
     def make_widgets(self):
+        self.make_canvas_frame()
+        self.make_canvas()
+        self.create_polygon()
+        self.create_rect()
+        self.make_scale()
+
+    def make_canvas_frame(self):
         self.frame = tk.Frame(self)
         self.frame.pack(fill=tk.BOTH, expand=1)
-
-        self.canvas = tk.Canvas(self.frame, bg='white', bd=2)
+        
+    def make_canvas(self):
+        self.scroll_x = tk.Scrollbar(self.frame, orient=tk.HORIZONTAL)
+        self.scroll_y = tk.Scrollbar(self.frame, orient=tk.VERTICAL)
+        self.canvas = tk.Canvas(self.frame, bg='white', bd=2,
+                                xscrollcommand=self.scroll_x.set,
+                                yscrollcommand=self.scroll_y.set)
+        self.scroll_x.config(command=self.canvas.xview)
+        self.scroll_y.config(command=self.canvas.yview)
+        self.canvas.grid(row=0, column=0, sticky='nswe')
+        self.scroll_x.grid(row=1, column=0, sticky='we')
+        self.scroll_y.grid(row=0, column=1, sticky='ns')
+        self.frame.rowconfigure(0, weight=1)
+        self.frame.columnconfigure(0, weight=1)
+    
+    def create_polygon(self):
         self.points = [150, 100, 200, 120, 240, 180, 210,
             200, 150, 150, 100, 200]
 
         self.poly_item = self.canvas.create_polygon(self.points,
-                                outline='#f11', fill='#1f1', width=2,
+                                outline='red', fill='yellow', width=1,
                                 tags='draggable')
-        self.canvas.pack(fill=tk.BOTH, expand=1)
-        self.zoom = tk.Scale(self.frame, from_=1, to=4, 
+
+    def create_rect(self):
+        self.rect = self.canvas.create_rectangle(230, 10, 290, 60,
+                                            outline="red", fill="gray90", 
+                                            width=2, tags='draggable')
+
+    def make_scale(self):
+        self.zoom = tk.Scale(self, from_=1, to=10, 
                              orient=tk.HORIZONTAL,
                              command=self.change_zoom)
-        self.zoom.pack()
+        self.zoom.pack(fill=tk.X)
+
+    def mouse_motion(self, event):
+        x, y = event.x, event.y
+        print('mouse pos', x, y)
+        cx = self.canvas.canvasx(x)
+        cy = self.canvas.canvasy(y)
+        print('canvas pos', cx, cy)
     
     def change_zoom(self, level):
         level = int(level)
@@ -33,6 +67,8 @@ class App(tk.Tk):
         self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
 
     def bind_events(self):
+        self.frame.bind('<Configure>', self.resize)
+        self.canvas.bind('<Motion>', self.mouse_motion)
         self.pressed_keys = {}
         self.bind("<KeyPress>", self.key_press)
         self.bind("<KeyRelease>", self.key_release)
@@ -84,6 +120,11 @@ class App(tk.Tk):
         item, x0, y0 = self.dnd_item
         self.canvas.move(item, x-x0, y-y0)
         self.dnd_item = (item, x, y)
+        self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
+
+    def resize(self, event):
+        region = self.canvas.bbox(tk.ALL)
+        self.canvas.configure(scrollregion=region)
 
 
 if __name__ == '__main__':
