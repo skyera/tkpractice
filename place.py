@@ -5,6 +5,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.make_widgets()
+        self.bind_events()
 
     def make_widgets(self):
         self.place_a()
@@ -12,6 +13,14 @@ class App(tk.Tk):
         self.place_c()
         self.place_d()
         self.place_e()
+    
+    def bind_events(self):
+        self.bind('<Motion>', self.mouse_move)
+
+    def mouse_move(self, event):
+        x, y = event.x, event.y
+        text = 'Mouse pos: ({}, {})'.format(x, y)
+        print(text)
 
     def place_a(self):
         self.label_a = tk.Label(self, text='A', bg='yellow')
