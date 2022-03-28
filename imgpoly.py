@@ -48,7 +48,7 @@ class ImageGalleryFrame(tk.Frame):
     def display_images(self, images):
         self.stext.delete("1.0", tk.END)
         for img_index, img in enumerate(images):
-            img_label = ImageFrame(self.stext, img, img_index, self.controller)
+            img_label = ImageFrame(self.stext, img, img_index, self.controller, bd=4, relief=tk.RAISED)
             self.stext.window_create(tk.END, window=img_label)
         self.stext.config(state=tk.DISABLED)
 
@@ -275,4 +275,3 @@ class App:
 if __name__ == '__main__':
     app = App()
     app.run()
-
