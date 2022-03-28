@@ -1,5 +1,7 @@
 from PIL import Image, ImageTk
+import os
 import tkinter as tk
+import tkinter.filedialog as fd
 from tkinter.scrolledtext import ScrolledText
 import tkinter.ttk as ttk
 
@@ -20,6 +22,12 @@ class ImageGalleryFrame(tk.Frame):
     def make_scrolledtext(self):
         self.stext = ScrolledText(self)
         self.stext.pack(fill=tk.BOTH, expand=True)
+
+    def display_images(self, images):
+        self.stext.delete("1.0", tk.END)
+        for img in images:
+            self.stext.image_create(tk.END, image=img)
+        self.stext.config(state=tk.DISABLED)
 
 
 class ImagePolyFrame(tk.Frame):
@@ -70,6 +78,9 @@ class MainFrame(tk.Frame):
         self.right_pane.pack(fill=tk.BOTH, expand=True)
         self.pw.add(self.right_pane, width=300)
 
+    def display_images(self, images):
+        self.left_pane.display_images(images)
+
 
 class View(tk.Tk):
     def __init__(self):
@@ -85,7 +96,7 @@ class View(tk.Tk):
 
     def make_file_menu(self):
         file_menu = tk.Menu(self.menu, tearoff=0)
-        file_menu.add_command(label='Open')
+        self.open_menu_item = file_menu.add_command(label='Open', command=self.on_open)
         file_menu.add_separator()
         file_menu.add_command(label='Quit', command=self.destroy)
         self.menu.add_cascade(label='File', menu=file_menu)
@@ -94,11 +105,47 @@ class View(tk.Tk):
     def make_frame(self):
         self.main_frame = MainFrame(self)
         self.main_frame.pack(fill=tk.BOTH, expand=True)
+    
+    def set_controller(self, controller):
+        self.controller = controller
+
+    def on_open(self):
+        self.controller.on_open_directory()
+
+    def display_images(self, images):
+        self.main_frame.display_images(images)
 
 
 class Model(object):
     def __init__(self):
-        pass
+        self.image_fnames = []
+
+    def set_image_fnames(self, image_fnames):
+        self.image_fnames = image_fnames
+        self.read_images()
+    
+    def read_images(self):
+        self.images = []
+        for fname in self.image_fnames:
+            self.read_image(fname)
+
+    def read_image(self, fname):
+        image = Image.open(fname)
+        image.thumbnail((128, 128))
+        self.images.append(ImageTk.PhotoImage(image))
+
+
+def choose_directory():
+    directory = fd.askdirectory(title='Open directory')
+    if directory:
+        print(directory)
+    return directory
+
+
+def collect_images(directory):
+    fnames = os.listdir(directory)
+    fnames = [os.path.join(directory, name) for name in fnames]
+    return fnames
 
 
 class Controller(object):
@@ -106,12 +153,30 @@ class Controller(object):
         self.model = model
         self.view = view
 
+        self.bind_events()
+    
+    def bind_events(self):
+        pass
+
+    def on_open_directory(self):
+        fnames = self.get_image_names()
+        self.model.set_image_fnames(fnames)
+        self.view.display_images(self.model.images)
+
+    def get_image_names(self):
+        directory = choose_directory()
+        fnames = []
+        if directory:
+            fnames = collect_images(directory)
+        return fnames
+
 
 class App:
     def __init__(self):
         self.model = Model()
         self.view = View()
         self.controller = Controller(self.model, self.view)
+        self.view.set_controller(self.controller)
 
     def run(self):
         self.view.mainloop()
