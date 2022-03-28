@@ -64,6 +64,7 @@ class ImagePolyFrame(tk.Frame):
     def make_widgets(self):
         self.make_info_label()
         self.make_canvas()
+        self.make_scale()
     
     def make_info_label(self):
         self.info_label = tk.Label(self, text='Canvas playground', bg='gray90', bd=2)
@@ -73,10 +74,22 @@ class ImagePolyFrame(tk.Frame):
         self.canvas = tk.Canvas(self, bg='white')
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
+    def make_scale(self):
+        self.scale = tk.Scale(self, from_=1, to=10, orient=tk.HORIZONTAL, command=self.on_scale)
+        self.scale.pack(fill=tk.X)
+
+    def on_scale(self, level):
+        print(level)
+        level = int(level)
+        self.controller.scale_image(level)
+
     def show_image(self, image):
         self.image = image
         self.canvas.delete(tk.ALL)
         self.canvas.create_image(0, 0, image=self.image, anchor=tk.NW)
+
+    def set_controller(self, controller):
+        self.controller = controller
 
 
 class MainFrame(tk.Frame):
@@ -115,6 +128,7 @@ class MainFrame(tk.Frame):
     def set_controller(self, controller):
         self.controller = controller
         self.left_pane.set_controller(controller)
+        self.right_pane.set_controller(controller)
 
     def show_one_image(self, image):
         self.right_pane.show_image(image)
@@ -161,6 +175,10 @@ class View(tk.Tk):
 class Model(object):
     def __init__(self):
         self.image_fnames = []
+        self.curr_image_index = -1
+        self.small_images = []
+        self.images = []
+        self.orig_images = []
 
     def set_image_fnames(self, image_fnames):
         self.image_fnames = image_fnames
@@ -169,17 +187,29 @@ class Model(object):
     def read_images(self):
         self.small_images = []
         self.images = []
+        self.orig_images = []
         for fname in self.image_fnames:
             self.read_image(fname)
 
     def read_image(self, fname):
         image = Image.open(fname)
+        self.orig_images.append(image)
         self.images.append(ImageTk.PhotoImage(image))
-        image.thumbnail((128, 128))
-        self.small_images.append(ImageTk.PhotoImage(image))
+        small_image = image.copy()
+        small_image.thumbnail((128, 128))
+        self.small_images.append(ImageTk.PhotoImage(small_image))
 
     def get_image(self, index):
         return self.images[index]
+
+    def set_curr_image(self, img_index):
+        self.curr_image_index = img_index
+
+    def get_scaled_image(self, level):
+        orig_img = self.orig_images[self.curr_image_index]
+        size = orig_img.width * level, orig_img.height * level
+        new_image = orig_img.resize(size)
+        return ImageTk.PhotoImage(new_image)
 
 
 def choose_directory():
@@ -219,8 +249,16 @@ class Controller(object):
 
     def show_one_image(self, img_index):
         print('image index', img_index)
+        self.model.set_curr_image(img_index)
         image = self.model.get_image(img_index)
         self.view.show_one_image(image)
+
+    def scale_image(self, level):
+        if self.model.curr_image_index == -1:
+            return
+        
+        scaled_image = self.model.get_scaled_image(level)
+        self.view.show_one_image(scaled_image)
 
 
 class App:
