@@ -59,23 +59,22 @@ class MainFrame(tk.Frame):
         group = tk.LabelFrame(self, padx=5, pady=5, text='Info')
         group.pack(side=tk.TOP, padx=10, pady=10, fill=tk.X)
         tk.Label(group, text='Path').grid(row=0, column=0)
-
     
     def make_left_pane(self):
         self.left_pane = ImageGalleryFrame(self.pw, width=100)
         self.left_pane.pack(fill=tk.BOTH, expand=True)
-        self.pw.add(self.left_pane)
+        self.pw.add(self.left_pane, width=150)
 
     def make_right_pane(self):
         self.right_pane = ImagePolyFrame(self.pw)
         self.right_pane.pack(fill=tk.BOTH, expand=True)
-        self.pw.add(self.right_pane)
+        self.pw.add(self.right_pane, width=300)
 
 
 class View(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.geometry('600x400')
+        self.geometry('800x600')
         self.make_menu()
         self.make_frame()
 
