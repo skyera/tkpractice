@@ -1,9 +1,31 @@
+from functools import partial
 from PIL import Image, ImageTk
 import os
 import tkinter as tk
 import tkinter.filedialog as fd
 from tkinter.scrolledtext import ScrolledText
 import tkinter.ttk as ttk
+
+
+class ImageFrame(tk.Frame):
+    def __init__(self, parent, image, img_index, controller, **options):
+        super().__init__(parent, **options)
+        self.image = image
+        self.img_index = img_index
+        self.controller = controller
+        self.make_widgets()
+        self.bind_events()
+
+    def make_widgets(self):
+        self.label = tk.Label(self, image=self.image)
+        self.label.pack(fill=tk.BOTH, expand=True)
+
+    def bind_events(self):
+        self.label.bind('<Double-Button-1>', self.on_double_click)
+
+    def on_double_click(self, event):
+        print('d click')
+        self.controller.show_one_image(self.img_index)
 
 
 class ImageGalleryFrame(tk.Frame):
@@ -25,9 +47,13 @@ class ImageGalleryFrame(tk.Frame):
 
     def display_images(self, images):
         self.stext.delete("1.0", tk.END)
-        for img in images:
-            self.stext.image_create(tk.END, image=img)
+        for img_index, img in enumerate(images):
+            img_label = ImageFrame(self.stext, img, img_index, self.controller)
+            self.stext.window_create(tk.END, window=img_label)
         self.stext.config(state=tk.DISABLED)
+
+    def set_controller(self, controller):
+        self.controller = controller
 
 
 class ImagePolyFrame(tk.Frame):
@@ -46,6 +72,11 @@ class ImagePolyFrame(tk.Frame):
     def make_canvas(self):
         self.canvas = tk.Canvas(self, bg='white')
         self.canvas.pack(fill=tk.BOTH, expand=True)
+
+    def show_image(self, image):
+        self.image = image
+        self.canvas.delete(tk.ALL)
+        self.canvas.create_image(0, 0, image=self.image, anchor=tk.NW)
 
 
 class MainFrame(tk.Frame):
@@ -81,6 +112,13 @@ class MainFrame(tk.Frame):
     def display_images(self, images):
         self.left_pane.display_images(images)
 
+    def set_controller(self, controller):
+        self.controller = controller
+        self.left_pane.set_controller(controller)
+
+    def show_one_image(self, image):
+        self.right_pane.show_image(image)
+
 
 class View(tk.Tk):
     def __init__(self):
@@ -108,12 +146,16 @@ class View(tk.Tk):
     
     def set_controller(self, controller):
         self.controller = controller
+        self.main_frame.set_controller(controller)
 
     def on_open(self):
         self.controller.on_open_directory()
 
     def display_images(self, images):
         self.main_frame.display_images(images)
+    
+    def show_one_image(self, image):
+        self.main_frame.show_one_image(image)
 
 
 class Model(object):
@@ -125,14 +167,19 @@ class Model(object):
         self.read_images()
     
     def read_images(self):
+        self.small_images = []
         self.images = []
         for fname in self.image_fnames:
             self.read_image(fname)
 
     def read_image(self, fname):
         image = Image.open(fname)
-        image.thumbnail((128, 128))
         self.images.append(ImageTk.PhotoImage(image))
+        image.thumbnail((128, 128))
+        self.small_images.append(ImageTk.PhotoImage(image))
+
+    def get_image(self, index):
+        return self.images[index]
 
 
 def choose_directory():
@@ -161,7 +208,7 @@ class Controller(object):
     def on_open_directory(self):
         fnames = self.get_image_names()
         self.model.set_image_fnames(fnames)
-        self.view.display_images(self.model.images)
+        self.view.display_images(self.model.small_images)
 
     def get_image_names(self):
         directory = choose_directory()
@@ -169,6 +216,11 @@ class Controller(object):
         if directory:
             fnames = collect_images(directory)
         return fnames
+
+    def show_one_image(self, img_index):
+        print('image index', img_index)
+        image = self.model.get_image(img_index)
+        self.view.show_one_image(image)
 
 
 class App:
