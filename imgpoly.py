@@ -56,6 +56,47 @@ class ImageGalleryFrame(tk.Frame):
         self.controller = controller
 
 
+
+class ScrolledCanvas(tk.Frame):
+    def __init__(self, parent, **kw):
+        super().__init__(parent, **kw)
+        self.make_widgets()
+        self.layout_widegts()
+        self.bind_events()
+
+    def make_widgets(self):
+        self.scroll_x = tk.Scrollbar(self, orient=tk.HORIZONTAL)
+        self.scroll_y = tk.Scrollbar(self, orient=tk.VERTICAL)
+        self.canvas = tk.Canvas(self, width=300, height=100,
+                                xscrollcommand=self.scroll_x.set,
+                                yscrollcommand=self.scroll_y.set)
+        self.scroll_x.config(command=self.canvas.xview)
+        self.scroll_y.config(command=self.canvas.yview)
+
+    def layout_widegts(self):
+        self.canvas.grid(row=0, column=0, sticky='nswe')
+        self.scroll_x.grid(row=1, column=0, sticky='we')
+        self.scroll_y.grid(row=0, column=1, sticky='ns')
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+    
+    def bind_events(self):
+        self.bind('<Configure>', self.resize)
+
+    def resize(self, event):
+        self.update_canvas_region()
+
+    def update_canvas_region(self):
+        region = self.canvas.bbox(tk.ALL)
+        self.canvas.configure(scrollregion=region)
+
+    def show_image(self, image):
+        self.image = image
+        self.canvas.delete(tk.ALL)
+        self.canvas.create_image(0, 0, image=self.image, anchor=tk.NW)
+        self.update_canvas_region()
+
+
 class ImagePolyFrame(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
@@ -71,8 +112,8 @@ class ImagePolyFrame(tk.Frame):
         self.info_label.pack(fill=tk.X, padx=5, pady=5)
     
     def make_canvas(self):
-        self.canvas = tk.Canvas(self, bg='white')
-        self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.canvas_frame = ScrolledCanvas(self)
+        self.canvas_frame.pack(fill=tk.BOTH, expand=True)
 
     def make_scale(self):
         self.scale = tk.Scale(self, from_=1, to=10, orient=tk.HORIZONTAL, command=self.on_scale)
@@ -84,9 +125,7 @@ class ImagePolyFrame(tk.Frame):
         self.controller.scale_image(level)
 
     def show_image(self, image):
-        self.image = image
-        self.canvas.delete(tk.ALL)
-        self.canvas.create_image(0, 0, image=self.image, anchor=tk.NW)
+        self.canvas_frame.show_image(image)
 
     def set_controller(self, controller):
         self.controller = controller
