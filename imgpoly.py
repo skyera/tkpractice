@@ -87,8 +87,8 @@ class ScrolledCanvas(tk.Frame):
         self.canvas.tag_bind("draggable", '<ButtonPress-1>', self.button_press)
         self.canvas.tag_bind("draggable", '<Button1-Motion>', self.button_motion)
         self.pressed_keys = {}
-        self.bind("<KeyPress>", self.key_press)
-        self.bind("<KeyRelease>", self.key_release)
+        self.bind_all("<KeyPress>", self.key_press)
+        self.bind_all("<KeyRelease>", self.key_release)
     
     def key_press(self, event):
         print('key press')
@@ -107,6 +107,7 @@ class ScrolledCanvas(tk.Frame):
             self.calc_move_offsets()
             if self.off_x != 0 or self.off_y != 0:
                 self.canvas.move(self.poly_item, self.off_x, self.off_y)
+                self.update_canvas_region()
         self.after(10, self.process_movements)
 
     def button_motion(self, event):
@@ -142,7 +143,7 @@ class ScrolledCanvas(tk.Frame):
     
     def calc_move_offsets(self):
         self.off_x, self.off_y = 0, 0
-        self.speed = 3
+        self.speed = 1
 
         self.calc_right_move()
         self.calc_left_move()
