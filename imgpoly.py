@@ -87,8 +87,8 @@ class ScrolledCanvas(tk.Frame):
         self.canvas.tag_bind("draggable", '<ButtonPress-1>', self.button_press)
         self.canvas.tag_bind("draggable", '<Button1-Motion>', self.button_motion)
         self.pressed_keys = {}
-        self.canvas.bind("<KeyPress>", self.key_press)
-        self.canvas.bind("<KeyRelease>", self.key_release)
+        self.bind("<KeyPress>", self.key_press)
+        self.bind("<KeyRelease>", self.key_release)
     
     def key_press(self, event):
         print('key press')
