@@ -63,6 +63,8 @@ class ScrolledCanvas(tk.Frame):
         self.make_widgets()
         self.layout_widegts()
         self.bind_events()
+        self.poly_item = None
+        self.process_movements()
 
     def make_widgets(self):
         self.scroll_x = tk.Scrollbar(self, orient=tk.HORIZONTAL)
@@ -82,6 +84,37 @@ class ScrolledCanvas(tk.Frame):
     
     def bind_events(self):
         self.bind('<Configure>', self.resize)
+        self.canvas.tag_bind("draggable", '<ButtonPress-1>', self.button_press)
+        self.canvas.tag_bind("draggable", '<Button1-Motion>', self.button_motion)
+        self.pressed_keys = {}
+        self.canvas.bind("<KeyPress>", self.key_press)
+        self.canvas.bind("<KeyRelease>", self.key_release)
+    
+    def key_press(self, event):
+        print('key press')
+        self.pressed_keys[event.keysym] = True
+
+    def key_release(self, event):
+        print('key release')
+        self.pressed_keys.pop(event.keysym, None)
+    
+    def button_press(self, event):
+        item = self.canvas.find_withtag(tk.CURRENT)
+        self.dnd_item = (item, event.x, event.y)
+    
+    def process_movements(self):
+        if self.poly_item != None:
+            self.calc_move_offsets()
+            if self.off_x != 0 or self.off_y != 0:
+                self.canvas.move(self.poly_item, self.off_x, self.off_y)
+        self.after(10, self.process_movements)
+
+    def button_motion(self, event):
+        x, y = event.x, event.y
+        item, x0, y0 = self.dnd_item
+        self.canvas.move(item, x-x0, y-y0)
+        self.dnd_item = (item, x, y)
+        self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
 
     def resize(self, event):
         self.update_canvas_region()
@@ -89,12 +122,48 @@ class ScrolledCanvas(tk.Frame):
     def update_canvas_region(self):
         region = self.canvas.bbox(tk.ALL)
         self.canvas.configure(scrollregion=region)
+    
+    def create_polygon(self, zoom_level):
+        self.points = [150, 100, 200, 120, 240, 180, 210,
+            200, 150, 150, 100, 200]
+        points = [p * zoom_level for p in self.points]
 
-    def show_image(self, image):
+        self.canvas.delete(self.poly_item)
+        self.poly_item = self.canvas.create_polygon(points,
+                                outline='red', fill='yellow', width=1,
+                                tags='draggable')
+
+    def show_image(self, image, zoom_level):
         self.image = image
         self.canvas.delete(tk.ALL)
         self.canvas.create_image(0, 0, image=self.image, anchor=tk.NW)
+        self.create_polygon(zoom_level)
         self.update_canvas_region()
+    
+    def calc_move_offsets(self):
+        self.off_x, self.off_y = 0, 0
+        self.speed = 3
+
+        self.calc_right_move()
+        self.calc_left_move()
+        self.calc_down_move()
+        self.calc_up_move()
+    
+    def calc_right_move(self):
+        if 'Right' in self.pressed_keys:
+            self.off_x += self.speed
+    
+    def calc_left_move(self):
+        if 'Left' in self.pressed_keys:
+            self.off_x -= self.speed
+
+    def calc_down_move(self):
+        if 'Down' in self.pressed_keys:
+            self.off_y += self.speed
+
+    def calc_up_move(self):
+        if 'Up' in self.pressed_keys:
+            self.off_y -= self.speed
 
 
 class ImagePolyFrame(tk.Frame):
@@ -124,8 +193,8 @@ class ImagePolyFrame(tk.Frame):
         level = int(level)
         self.controller.scale_image(level)
 
-    def show_image(self, image):
-        self.canvas_frame.show_image(image)
+    def show_image(self, image, zoom_level):
+        self.canvas_frame.show_image(image, zoom_level)
 
     def set_controller(self, controller):
         self.controller = controller
@@ -169,8 +238,8 @@ class MainFrame(tk.Frame):
         self.left_pane.set_controller(controller)
         self.right_pane.set_controller(controller)
 
-    def show_one_image(self, image):
-        self.right_pane.show_image(image)
+    def show_one_image(self, image, zoom_level):
+        self.right_pane.show_image(image, zoom_level)
 
 
 class View(tk.Tk):
@@ -207,8 +276,8 @@ class View(tk.Tk):
     def display_images(self, images):
         self.main_frame.display_images(images)
     
-    def show_one_image(self, image):
-        self.main_frame.show_one_image(image)
+    def show_one_image(self, image, zoom_level):
+        self.main_frame.show_one_image(image, zoom_level)
 
 
 class Model(object):
@@ -290,14 +359,14 @@ class Controller(object):
         print('image index', img_index)
         self.model.set_curr_image(img_index)
         image = self.model.get_image(img_index)
-        self.view.show_one_image(image)
+        self.view.show_one_image(image, zoom_level=1)
 
-    def scale_image(self, level):
+    def scale_image(self, zoom_level):
         if self.model.curr_image_index == -1:
             return
         
-        scaled_image = self.model.get_scaled_image(level)
-        self.view.show_one_image(scaled_image)
+        scaled_image = self.model.get_scaled_image(zoom_level)
+        self.view.show_one_image(scaled_image, zoom_level)
 
 
 class App:
