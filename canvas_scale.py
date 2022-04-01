@@ -40,12 +40,21 @@ class App(tk.Tk):
     def bind_events(self):
         self.canvas.bind('<ButtonPress-1>', self.move_start)
         self.canvas.bind('<B1-Motion>', self.move_move)
+        self.canvas.bind('<MouseWheel>', self.zoomer)
+        self.bind_all("<MouseWheel>", self.zoomer)
 
     def move_start(self, event):
         self.canvas.scan_mark(event.x, event.y)
 
     def move_move(self, event):
         self.canvas.scan_dragto(event.x, event.y, gain=1)
+
+    def zoomer(self, event):
+        if event.delta > 0:
+            self.canvas.scale(tk.ALL, event.x, event.y, 1.1, 1.1)
+        else:
+            self.canvas.scale(tk.ALL, event.x, event.y, 0.9, 0.9)
+        self.canvas.configure(scrollregion=self.canvas.bbox(tk.ALL))
 
 
 if __name__ == '__main__':
