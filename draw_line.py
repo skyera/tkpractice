@@ -58,11 +58,11 @@ class App(tk.Tk):
     def make_widgets(self):
         self.option_form = LineForm(self, text='Line options', bg='gray90')
         self.canvas = tk.Canvas(self, bg='white')
-        self.canvas.bind('<Button-1>', self.mouse_move)
+        self.canvas.bind('<Button-1>', self.mouse_down)
         self.option_form.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.Y)
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
-    def mouse_move(self, event):
+    def mouse_down(self, event):
         x, y = event.x, event.y
         if not self.start_point:
             self.start_point = (x, y)
