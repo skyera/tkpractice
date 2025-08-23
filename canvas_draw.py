@@ -10,11 +10,11 @@ class App(tk.Tk):
         self.item_id = None
 
     def make_widgets(self):
-        self.canvas = tk.Canvas(self, width=300, height=300, bg='beige')
-        self.canvas.bind('<ButtonPress-1>', self.onstart)
-        self.canvas.bind('<B1-Motion>', self.ongrow)
-        self.canvas.bind('<Double-1>',self.onclear)
-        self.canvas.bind('<ButtonPress-3>', self.onmove)
+        self.canvas = tk.Canvas(self, width=300, height=300, bg="beige")
+        self.canvas.bind("<ButtonPress-1>", self.onstart)
+        self.canvas.bind("<B1-Motion>", self.ongrow)
+        self.canvas.bind("<Double-1>", self.onclear)
+        self.canvas.bind("<ButtonPress-3>", self.onmove)
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
     def onstart(self, event):
@@ -31,7 +31,9 @@ class App(tk.Tk):
         if self.item_id:
             canvas.delete(self.item_id)
 
-        self.item_id = self.shape(self.start.x, self.start.y, event.x, event.y, fill='red')
+        self.item_id = self.shape(
+            self.start.x, self.start.y, event.x, event.y, fill="red"
+        )
 
     def onclear(self, event):
         event.widget.delete(tk.ALL)
@@ -44,8 +46,6 @@ class App(tk.Tk):
             self.start = event
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = App()
     app.mainloop()
-
-

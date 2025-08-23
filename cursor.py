@@ -7,12 +7,12 @@ class App(tk.Tk):
         self.make_widgets()
 
     def make_widgets(self):
-        btn = tk.Button(self, text='Spam', padx=10, pady=10)
+        btn = tk.Button(self, text="Spam", padx=10, pady=10)
         btn.pack(padx=20, pady=20)
-        btn.config(cursor='gumby')
-        btn.config(font=('helvetica', 20, 'underline italic'))
+        btn.config(cursor="gumby")
+        btn.config(font=("helvetica", 20, "underline italic"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = App()
     app.mainloop()

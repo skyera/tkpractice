@@ -1,8 +1,7 @@
 import tkinter as tk
 
 
-DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday',
-        'Friday', 'Saturday', 'Sunday']
+DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 MODES = [tk.SINGLE, tk.BROWSE, tk.MULTIPLE, tk.EXTENDED]
 
 
@@ -21,8 +20,7 @@ class App(tk.Tk):
         self.listbox.insert(0, *DAYS)
 
     def make_btn(self):
-        self.print_btn = tk.Button(self, text='Print',
-                command=self.print_selection)
+        self.print_btn = tk.Button(self, text="Print", command=self.print_selection)
         self.btns = [self.create_btn(m) for m in MODES]
 
     def layout_widgets(self):
@@ -40,6 +38,6 @@ class App(tk.Tk):
         print([self.listbox.get(i) for i in selection])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = App()
     app.mainloop()

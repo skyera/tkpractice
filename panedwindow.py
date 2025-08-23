@@ -21,9 +21,9 @@ class App(tk.Tk):
         left.rowconfigure(0, weight=1)
         left.columnconfigure(0, weight=1)
         self.pw.add(left, weight=1)
-        
-        label_left = ttk.Label(left, text='Left size', background='red')
-        label_left.grid(row=0, column=0, sticky='nswe')
+
+        label_left = ttk.Label(left, text="Left size", background="red")
+        label_left.grid(row=0, column=0, sticky="nswe")
 
     def make_right_pane(self):
         right = ttk.Frame(self.pw, width=200, height=200)
@@ -32,10 +32,10 @@ class App(tk.Tk):
         right.columnconfigure(0, weight=1)
         self.pw.add(right, weight=0)
 
-        label_right = ttk.Label(right, text='Right side', background='blue')
-        label_right.grid(row=0, column=0, sticky='nswe')
+        label_right = ttk.Label(right, text="Right side", background="blue")
+        label_right.grid(row=0, column=0, sticky="nswe")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = App()
     app.mainloop()
