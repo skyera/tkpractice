@@ -168,6 +168,7 @@ class FileViewerApp(tk.Tk):
 
         # Insert real directory listing
         try:
+            print(f"Scanning: {path}")
             entries = sorted(os.listdir(path), key=str.lower)
         except Exception as e:
             messagebox.showerror("Error", f"Cannot access:\n{path}\n\n{e}")

@@ -50,6 +50,7 @@ class FancyRadioApp(tk.Tk):
         self.update_preview(themes["Blue"], "Blue")
 
     def update_preview(self, color, text):
+        print(self.choice.get())
         self.right_frame.config(bg=color)
         self.preview_label.config(bg=color, text=f"{text} Theme", fg="white")
 
