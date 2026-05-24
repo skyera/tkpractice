@@ -29,7 +29,15 @@ class FileBrowserApp(tk.Tk):
         self.title("File Browser with Viewer")
         self.geometry("900x600")
 
-        # Paned window (Tree on left, viewer on right)
+        # Toolbar button to select directory (Packed first at the top)
+        self.toolbar = ttk.Frame(self)
+        self.toolbar.pack(side=tk.TOP, fill=tk.X)
+        self.select_btn = ttk.Button(
+            self.toolbar, text="Select Directory", command=self.load_directory
+        )
+        self.select_btn.pack(side=tk.LEFT, padx=5, pady=5)
+
+        # Paned window (Tree on left, viewer on right - Packed second, occupies remaining space)
         self.paned = ttk.Panedwindow(self, orient=tk.HORIZONTAL)
         self.paned.pack(fill=tk.BOTH, expand=True)
 
@@ -49,14 +57,6 @@ class FileBrowserApp(tk.Tk):
         # Right frame (viewer)
         self.viewer_frame = ttk.Frame(self.paned)
         self.paned.add(self.viewer_frame, weight=3)
-
-        # Toolbar button to select directory
-        self.toolbar = ttk.Frame(self)
-        self.toolbar.pack(fill=tk.X)
-        self.select_btn = ttk.Button(
-            self.toolbar, text="Select Directory", command=self.load_directory
-        )
-        self.select_btn.pack(side=tk.LEFT, padx=5, pady=5)
 
         # Bind tree events
         self.tree.bind("<Double-1>", self.on_item_double_click)

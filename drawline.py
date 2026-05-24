@@ -17,7 +17,7 @@ class LineOptionFrame(tk.LabelFrame):
 
     def make_arrow_style_widgets(self):
         self.arrow_var = tk.StringVar()
-        self.arrow_label = tk.Label(self, text="Array style")
+        self.arrow_label = tk.Label(self, text="Arrow style")
         self.arrow_option = tk.OptionMenu(self, self.arrow_var, *self.arrows)
 
     def make_color_widgets(self):

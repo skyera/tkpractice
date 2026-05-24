@@ -37,22 +37,29 @@ def draw_random_shapes():
 
 def on_mouse_down(event):
     global selected_shape, offset_x, offset_y
-    selected_shape = canvas.find_closest(event.x, event.y)
-    if selected_shape:
+    # Use find_withtag("current") to select the clicked item reliably
+    current_item = canvas.find_withtag("current")
+    if current_item:
+        selected_shape = current_item[0]
         canvas.itemconfig(selected_shape, outline="blue", width=2)
-        bbox = canvas.bbox(selected_shape)
-        offset_x = event.x - bbox[0]
-        offset_y = event.y - bbox[1]
+        # Store initial mouse coordinates for relative dragging (delta-based)
+        offset_x = event.x
+        offset_y = event.y
 
 def on_mouse_drag(event):
     global selected_shape, offset_x, offset_y
     if selected_shape:
-        canvas.move(selected_shape, event.x - offset_x - canvas.coords(selected_shape)[0], event.y - offset_y - canvas.coords(selected_shape)[1])
-        offset_x = event.x - canvas.coords(selected_shape)[0]
-        offset_y = event.y - canvas.coords(selected_shape)[1]
+        # Calculate cursor movement delta
+        dx = event.x - offset_x
+        dy = event.y - offset_y
+        # Move the item by delta
+        canvas.move(selected_shape, dx, dy)
+        # Update last mouse position
+        offset_x = event.x
+        offset_y = event.y
 
 def on_mouse_up(event):
-    global selected_shape, offset_x, offset_y
+    global selected_shape
     if selected_shape:
         canvas.itemconfig(selected_shape, outline="black", width=1)
         selected_shape = None

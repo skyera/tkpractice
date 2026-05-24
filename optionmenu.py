@@ -30,7 +30,7 @@ class App(tk.Tk):
     
     def _make_color_image(self, i):
         c = self.color_menu['menu'].entryconfig(i, 'label')[-1]
-        img = tk.PhotoImage(name='image_'.join(c), width=16, height=16)
+        img = tk.PhotoImage(name=f'image_{c}', width=16, height=16)
         img.put(c, to=(1,1,15,15))
         self._imgs.append(img)
         self.color_menu['menu'].entryconfigure(i, image=img, hidemargin=True)
