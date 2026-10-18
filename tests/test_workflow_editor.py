@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from workflow_editor import Workflow, run_workflow, save_workflow
+from workflow_support import PREVIEW_LIMIT, History
 
 
 class WorkflowTests(unittest.TestCase):
@@ -114,6 +115,137 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(loaded.to_dict(), self.graph.to_dict())
         loaded.nodes[self.replace.id].settings["replace"] = "Different"
         self.assertEqual(self.replace.settings["replace"], "Tkinter")
+
+    def test_branch_outputs_do_not_modify_their_siblings(self) -> None:
+        upper = self.graph.add_node("Uppercase", 300, 200)
+        second_save = self.graph.add_node("Save File", 550, 200)
+        second_save.settings["path"] = "upper.txt"
+        self.graph.connect(self.read.id, upper.id)
+        self.graph.connect(upper.id, second_save.id)
+        self.run_graph()
+        self.assertEqual(
+            (self.directory / "upper.txt").read_text(encoding="utf-8"),
+            "HELLO WORLD! 🌍",
+        )
+        self.assertEqual(
+            (self.directory / "output.txt").read_text(encoding="utf-8"),
+            "Hello Tkinter! 🌍",
+        )
+
+    def test_output_conflicts_are_checked_before_any_file_is_written(self) -> None:
+        second = self.graph.add_node("Save File", 550, 200)
+        self.graph.connect(self.read.id, second.id)
+        for path in ("output.txt", "occupied.txt"):
+            with self.subTest(path=path):
+                second.settings["path"] = path
+                (self.directory / "occupied.txt").write_text("Keep", encoding="utf-8")
+                with self.assertRaises((ValueError, FileExistsError)):
+                    self.run_graph()
+                self.assertFalse((self.directory / "output.txt").exists())
+
+    def test_preview_evaluates_only_ancestors_and_never_writes(self) -> None:
+        self.save.settings["path"] = ""
+        invalid = self.graph.add_node("Replace Text", 700, 400)
+        self.assertFalse(invalid.settings["find"])
+        outputs = run_workflow(
+            self.graph,
+            self.directory,
+            threading.Event(),
+            self.messages.append,
+            target=self.save.id,
+        )
+        self.assertEqual(outputs[self.save.id], "Hello Tkinter! 🌍")
+        self.assertNotIn(invalid.id, outputs)
+        self.assertFalse((self.directory / "output.txt").exists())
+        self.assertEqual(self.messages[-1], "Preview complete; no files written.")
+
+    def test_new_text_nodes_and_preview_terminal(self) -> None:
+        graph = Workflow()
+        read = graph.add_node("Read Text", 50, 50)
+        read.settings["path"] = "input.txt"
+        (self.directory / "input.txt").write_text(
+            "  keep Me  \n  discard  \n  KEEP too  \n", encoding="utf-8"
+        )
+        previous = read
+        for kind in (
+            "Trim Whitespace",
+            "Uppercase",
+            "Filter Lines",
+            "Lowercase",
+            "Preview Text",
+        ):
+            node = graph.add_node(kind, 300, 50)
+            if kind == "Filter Lines":
+                node.settings["contains"] = "KEEP"
+            graph.connect(previous.id, node.id)
+            previous = node
+        events = []
+        outputs = run_workflow(
+            graph,
+            self.directory,
+            threading.Event(),
+            self.messages.append,
+            lambda kind, payload: events.append((kind, payload)),
+        )
+        self.assertEqual(outputs[previous.id], "keep me\nkeep too\n")
+        self.assertEqual(events[-1], ("state", {"id": previous.id, "state": "success"}))
+
+    def test_failure_and_cancel_events_identify_nodes(self) -> None:
+        self.read.settings["path"] = "missing.txt"
+        events = []
+        with self.assertRaises(FileNotFoundError):
+            run_workflow(
+                self.graph,
+                self.directory,
+                threading.Event(),
+                self.messages.append,
+                lambda kind, payload: events.append((kind, payload)),
+            )
+        self.assertIn(("state", {"id": self.read.id, "state": "failed"}), events)
+        self.read.settings["path"] = "input.txt"
+        stop = threading.Event()
+        events.clear()
+
+        def receive(kind: str, payload: dict) -> None:
+            events.append((kind, payload))
+            if kind == "state" and payload["state"] == "success":
+                stop.set()
+
+        run_workflow(self.graph, self.directory, stop, self.messages.append, receive)
+        self.assertIn(("state", {"id": self.save.id, "state": "cancelled"}), events)
+        self.assertFalse((self.directory / "output.txt").exists())
+
+    def test_preview_payloads_are_bounded_and_multiline_replacements_work(self) -> None:
+        (self.directory / "input.txt").write_text("a\nb\n" * 5000, encoding="utf-8")
+        self.replace.settings.update(find="a\nb", replace="multiline")
+        events = []
+        output = run_workflow(
+            self.graph,
+            self.directory,
+            threading.Event(),
+            self.messages.append,
+            lambda kind, payload: events.append((kind, payload)),
+            target=self.replace.id,
+        )
+        self.assertEqual(output[self.replace.id], "multiline\n" * 5000)
+        previews = [payload for kind, payload in events if kind == "preview"]
+        self.assertTrue(all(len(p["text"]) <= PREVIEW_LIMIT for p in previews))
+        self.assertEqual(previews[-1]["characters"], 50000)
+
+    def test_history_restores_snapshots_and_invalidates_redo_on_new_edit(self) -> None:
+        history = History(limit=2)
+        original = self.graph.to_dict()
+        self.replace.settings["replace"] = "one"
+        first = self.graph.to_dict()
+        history.record(original, first)
+        self.assertEqual(history.undo(first), original)
+        self.assertEqual(history.redo(original), first)
+        self.assertEqual(history.undo(first), original)
+        history.record(original, {"different": True})
+        self.assertIsNone(history.redo(original))
+        history.record({"one": 1}, {"two": 2})
+        history.record({"two": 2}, {"three": 3})
+        self.assertEqual(len(history.undo_stack), 2)
 
     def test_malformed_documents_are_rejected(self) -> None:
         valid = self.graph.to_dict()
